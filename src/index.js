@@ -19,20 +19,45 @@ app.use(express.json());
 
 app.get('/createModel', (req, res) => {
     const model = generate();
-    redisClient.set(model, JSON.stringify({'layers': []}));
+    redisClient.set(model, JSON.stringify(
+        {
+            'layers': [],
+            'createdAt': new Date().toISOString(),
+            'updatedAt': new Date().toISOString(),
+        }));
     res.json({model});
 });
 
 app.post('/addLayer', async (req, res) => {
-    const {model, layer} = req.body;
+    const model = req.body.model;
+    const layer = req.body.layer;
     const modelData = await redisClient.get(model);
     if (!modelData) {
         return res.status(404).json({error: 'Model not found'});
     }
     const modelObj = JSON.parse(modelData);
     modelObj.layers.push(layer);
+    modelObj.updatedAt = new Date().toISOString();
     redisClient.set(model, JSON.stringify(modelObj));
     res.json({model: modelObj});
+});
+app.get('/getModel', async (req, res) => {
+    const {model} = req.query;
+    const modelData = await redisClient.get(model);
+    if (!modelData) {
+        return res.status(404).json({error: 'Model not found'});
+    }
+    res.json(JSON.parse(modelData));
+});
+
+app.delete('/deleteModel', async (req, res) => {
+    const {model} = req.query;
+    const modelData = await redisClient.get(model);
+    if (!modelData) {
+        return res.status(404).json({error: 'Model not found'});
+    }
+    await redisClient.del(model);
+    res.json({message: 'Model deleted successfully'});
 });
 app.listen(port, async () => {
     console.log(`Server is running at http://localhost:${port}`);
