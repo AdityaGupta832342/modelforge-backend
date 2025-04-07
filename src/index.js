@@ -63,5 +63,7 @@ app.listen(port, async () => {
     console.log(`Server is running at http://localhost:${port}`);
     await redisClient.connect();
     redisClient.on('error', (err) => console.log('Redis Client Error', err));
-    
+
 })
+
+console.log("hohofsd")
